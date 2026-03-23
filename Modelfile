@@ -1,0 +1,5 @@
+FROM llama3.1
+# Force all layers (usually 33 for 8B) onto the GPU
+PARAMETER num_gpu 99
+# Set a realistic context window for 12GB VRAM (try 16k or 32k first)
+PARAMETER num_ctx 16384
