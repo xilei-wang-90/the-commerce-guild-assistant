@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 _MATCH_FIELDS: dict[str, str] = {
     "sandrock_wiki_summary": "page",
     "sandrock_wiki_section_reverse_hyde": "section",
+    "sandrock_wiki_section_tagged_reverse_hyde": "section",
 }
 
 
