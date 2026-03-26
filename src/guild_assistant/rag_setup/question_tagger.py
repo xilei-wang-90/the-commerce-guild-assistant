@@ -23,16 +23,35 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 _ATX_HEADING_RE = re.compile(r"^(#{1,6})\s+(.+)$", re.MULTILINE)
+_SETEXT_RE = re.compile(r"^([^\n]+)\n(=+|-{2,})[ \t]*$", re.MULTILINE)
 
 
 def _extract_l2_l3_titles(content: str) -> list[str]:
-    """Return all L2 and L3 heading titles from Markdown *content*."""
-    titles: list[str] = []
+    """Return all L2 and L3 heading titles from Markdown *content*.
+
+    Handles both ATX-style headings (``## Title``) and setext-style
+    headings (title followed by ``---`` for L2 or ``===`` for L1).
+    Setext headings can only express L1 and L2; only L2 (``---``)
+    matches are included.
+    """
+    headings: list[tuple[int, int, str]] = []  # (position, level, title)
+
     for m in _ATX_HEADING_RE.finditer(content):
         level = len(m.group(1))
         if level in (2, 3):
-            titles.append(m.group(2).strip())
-    return titles
+            headings.append((m.start(), level, m.group(2).strip()))
+
+    for m in _SETEXT_RE.finditer(content):
+        title_text = m.group(1).strip()
+        if not title_text:
+            continue
+        underline = m.group(2)
+        level = 1 if underline[0] == "=" else 2
+        if level == 2:
+            headings.append((m.start(), level, title_text))
+
+    headings.sort(key=lambda h: h[0])
+    return [title for _, _, title in headings]
 
 
 def _build_tag_line(page_slug: str, heading_titles: list[str]) -> str:

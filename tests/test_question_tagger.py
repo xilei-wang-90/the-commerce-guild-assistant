@@ -52,6 +52,22 @@ class TestExtractL2L3Titles:
         content = "##  Spaced Title  \n###  Sub Title  \n"
         assert _extract_l2_l3_titles(content) == ["Spaced Title", "Sub Title"]
 
+    def test_setext_l2_heading(self):
+        content = "Obtaining\n---------\nSome text.\n"
+        assert _extract_l2_l3_titles(content) == ["Obtaining"]
+
+    def test_setext_l1_ignored(self):
+        content = "Page Title\n==========\nSome text.\n"
+        assert _extract_l2_l3_titles(content) == []
+
+    def test_mixed_atx_and_setext(self):
+        content = "Obtaining\n---------\nSome text.\n### From NPCs\nMore text.\n"
+        assert _extract_l2_l3_titles(content) == ["Obtaining", "From NPCs"]
+
+    def test_setext_blank_title_ignored(self):
+        content = "\n---------\nSome text.\n"
+        assert _extract_l2_l3_titles(content) == []
+
 
 # ---------------------------------------------------------------------------
 # _build_tag_line
@@ -138,6 +154,20 @@ class TestTagFile:
         result = tagger.tag_file(questions_dir / "orphan-details.md")
 
         assert result == "[orphan]\nQ?"
+
+    def test_setext_headings_in_section(self, tmp_path):
+        questions_dir = tmp_path / "questions"
+        sections_dir = tmp_path / "sections"
+        output_dir = tmp_path / "output"
+
+        _populate(questions_dir, {"yakmel-obtaining.md": "How to get yakmel?"})
+        _populate(sections_dir, {"yakmel-obtaining.md": "Obtaining\n---------\nBuy from vendor.\n### From Wild\nCatch in desert.\n"})
+
+        tagger = QuestionTagger(questions_dir, sections_dir, output_dir)
+        result = tagger.tag_file(questions_dir / "yakmel-obtaining.md")
+
+        assert result.startswith("[yakmel | Obtaining | From Wild]")
+        assert "How to get yakmel?" in result
 
     def test_creates_output_dir(self, tmp_path):
         questions_dir = tmp_path / "questions"
