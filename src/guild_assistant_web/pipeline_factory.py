@@ -12,11 +12,12 @@ from guild_assistant.utils.model_adapter import (
     OllamaEmbeddingAdapter,
 )
 
-VALID_MODES = ("summary", "section-reverse-hyde")
+VALID_MODES = ("summary", "section-reverse-hyde", "section-tagged-reverse-hyde")
 
 _MODE_CONFIG: dict[str, str] = {
     "summary": "sandrock_wiki_summary",
     "section-reverse-hyde": "sandrock_wiki_section_reverse_hyde",
+    "section-tagged-reverse-hyde": "sandrock_wiki_section_tagged_reverse_hyde",
 }
 
 DEFAULT_DB_PATH = Path(__file__).resolve().parent.parent.parent / "sandrock_db"

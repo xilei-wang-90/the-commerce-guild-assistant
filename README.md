@@ -124,6 +124,7 @@ via `--mode`:
 |---|---|---|---|
 | `summary` | `data/summaries/` | `data/silver/` | `sandrock_wiki_summary` |
 | `section-reverse-hyde` | `data/reverse-hyde/` | `data/silver-sections/` | `sandrock_wiki_section_reverse_hyde` |
+| `section-tagged-reverse-hyde` | `data/tagged-reverse-hyde/` | `data/silver-sections/` | `sandrock_wiki_section_tagged_reverse_hyde` |
 
 If `--mode` is omitted, the script prompts interactively.
 
@@ -147,6 +148,7 @@ match is found, use `silver_path` to load the full article text.
 ```bash
 python3 scripts/run_embedder.py --mode summary
 python3 scripts/run_embedder.py --mode section-reverse-hyde
+python3 scripts/run_embedder.py --mode section-tagged-reverse-hyde
 ```
 
 The database is persisted to `./sandrock_db/` automatically — no server
@@ -156,7 +158,7 @@ CLI flags:
 
 | Flag | Default | Description |
 |---|---|---|
-| `--mode` | prompted | Embedding mode: `summary` or `section-reverse-hyde` |
+| `--mode` | prompted | Embedding mode: `summary`, `section-reverse-hyde`, or `section-tagged-reverse-hyde` |
 | `--force` | off | Re-embed files even if already in the database |
 | `--max-records` | `10` | Maximum number of files to embed per run (`0` = unlimited) |
 | `--ollama-url` | `http://localhost:11434` | Ollama server base URL |
@@ -202,6 +204,7 @@ Requires `--mode` to select which collection to query:
 
 - **`summary`** — queries `sandrock_wiki_summary` (full-text pages from `data/silver/`).
 - **`section-reverse-hyde`** — queries `sandrock_wiki_section_reverse_hyde` (per-section chunks from `data/silver-sections/`).
+- **`section-tagged-reverse-hyde`** — queries `sandrock_wiki_section_tagged_reverse_hyde` (per-section chunks with metadata tags from `data/silver-sections/`).
 
 If `--mode` is omitted the script prompts interactively.
 
@@ -211,11 +214,12 @@ Needs `GEMINI_API_KEY` in the environment or `.env` for generation.
 ```bash
 python3 scripts/run_chat.py --mode summary
 python3 scripts/run_chat.py --mode section-reverse-hyde
+python3 scripts/run_chat.py --mode section-tagged-reverse-hyde
 ```
 
 | Flag | Default | Description |
 |---|---|---|
-| `--mode` | *(prompted)* | Retrieval mode: `summary` or `section-reverse-hyde` |
+| `--mode` | *(prompted)* | Retrieval mode: `summary`, `section-reverse-hyde`, or `section-tagged-reverse-hyde` |
 | `--ollama-url` | `http://localhost:11434` | Ollama server base URL |
 
 Configuration constants at the top of the file:
@@ -233,9 +237,9 @@ Type `quit`, `exit`, or press Ctrl+C to stop.
 ### `scripts/run_web.py` — Launch Chainlit web UI
 
 Starts a Chainlit web server that provides a browser-based chat interface to
-the RAG pipeline. Users can switch between `summary` and
-`section-reverse-hyde` retrieval modes via the settings panel (gear icon) in
-the UI.
+the RAG pipeline. Users can switch between `summary`, `section-reverse-hyde`, and
+`section-tagged-reverse-hyde` retrieval modes via the settings panel (gear
+icon) in the UI.
 
 Requires Ollama running locally with `all-minilm` (embedding) and
 `GEMINI_API_KEY` in the environment or `.env`.
@@ -369,6 +373,47 @@ CLI flags:
 python3 scripts/run_question_generator.py --force --max-files 0
 ```
 
+### `scripts/run_question_tagger.py` — Tag reverse-hyde questions with metadata
+
+Reads hypothetical question files from `data/reverse-hyde/` and the
+corresponding silver-section Markdown files from `data/silver-sections/`.
+For each file, extracts the page slug (from the filename) and all L2/L3
+heading titles (from the section content), then writes a tagged copy to
+`data/tagged-reverse-hyde/` with a bracketed tag line prepended.
+
+No LLM calls are made — this is a pure text-processing step.
+
+Tag format example:
+
+```
+[yakmel | Obtaining | From NPCs | From Enemies]
+What items do yakmel drop?
+How do you obtain a yakmel?
+```
+
+```bash
+python3 scripts/run_question_tagger.py
+```
+
+Configuration constants at the top of the file:
+
+| Constant | Default | Description |
+|---|---|---|
+| `QUESTIONS_DIR` | `data/reverse-hyde/` | Directory containing reverse-hyde question files |
+| `SECTIONS_DIR` | `data/silver-sections/` | Directory containing silver-section Markdown files |
+| `OUTPUT_DIR` | `data/tagged-reverse-hyde/` | Directory where tagged question files are written |
+
+CLI flags:
+
+| Flag | Default | Description |
+|---|---|---|
+| `--force` | off | Re-tag files even if output already exists |
+| `--max-files` | `10` | Maximum number of files to tag per run (`0` = unlimited) |
+
+```bash
+python3 scripts/run_question_tagger.py --force --max-files 0
+```
+
 ### `scripts/run_golden_dataset.py` — Generate a golden dataset for retrieval testing
 
 Scans all `.md` files in `data/silver/`, classifies each page by type (item,
@@ -464,8 +509,9 @@ metrics:
   rank 1 scores 1.0, rank 2 scores ~0.63, rank 5 scores ~0.39.
 
 For `summary` collections, a "hit" means the expected page filename appears in
-the retrieved results. For `section-reverse-hyde` collections, the expected
-section filename is matched instead.
+the retrieved results. For `section-reverse-hyde` and
+`section-tagged-reverse-hyde` collections, the expected section filename is
+matched instead.
 
 Requires Ollama running locally with `all-minilm` (embedding model).
 
@@ -489,7 +535,7 @@ CLI flags:
 | Flag | Default | Description |
 |---|---|---|
 | `--testset` | *(prompted)* | Test set to evaluate: `factoid`, `conceptual`, or `messy` |
-| `--collection` | *(prompted)* | Collection to test: `summary` or `section-reverse-hyde` |
+| `--collection` | *(prompted)* | Collection to test: `summary`, `section-reverse-hyde`, or `section-tagged-reverse-hyde` |
 | `--k` | `5` | Number of top results to retrieve per query |
 | `--metrics` | `hit_rate` | Space-separated list of metrics to compute |
 | `--rerank` | `false` | Enable rerank mode: compare NDCG@K before/after cross-encoder reranking |

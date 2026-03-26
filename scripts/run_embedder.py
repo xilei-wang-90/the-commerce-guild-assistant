@@ -16,6 +16,15 @@ Supports two embedding modes selected via ``--mode``:
     indexing: embedding questions a document answers improves semantic match
     quality for conversational queries.
 
+``section-tagged-reverse-hyde``
+    Reads tagged question files from ``data/tagged-reverse-hyde/`` (produced by
+    ``run_question_tagger.py``), embeds each one, and stores the vectors in
+    the ``sandrock_wiki_section_tagged_reverse_hyde`` ChromaDB collection.
+    Each entry links back to the corresponding full-text file in
+    ``data/silver-sections/``.  The tag line prepended to each file contains
+    the page slug and L2/L3 heading titles, giving the embedding model extra
+    semantic context.
+
 If ``--mode`` is omitted or an unrecognised value is given the script
 interactively prompts the user to choose.
 
@@ -41,7 +50,7 @@ from guild_assistant.utils.model_adapter import OllamaEmbeddingAdapter
 
 _ROOT = Path(__file__).parent.parent
 
-VALID_MODES = ("summary", "section-reverse-hyde")
+VALID_MODES = ("summary", "section-reverse-hyde", "section-tagged-reverse-hyde")
 
 _MODE_CONFIG: dict[str, dict[str, object]] = {
     "summary": {
@@ -53,6 +62,11 @@ _MODE_CONFIG: dict[str, dict[str, object]] = {
         "sources_dir": _ROOT / "data" / "reverse-hyde",
         "silver_dir": _ROOT / "data" / "silver-sections",
         "collection_name": "sandrock_wiki_section_reverse_hyde",
+    },
+    "section-tagged-reverse-hyde": {
+        "sources_dir": _ROOT / "data" / "tagged-reverse-hyde",
+        "silver_dir": _ROOT / "data" / "silver-sections",
+        "collection_name": "sandrock_wiki_section_tagged_reverse_hyde",
     },
 }
 
@@ -86,7 +100,9 @@ def main() -> None:
         help=(
             "Embedding mode: 'summary' embeds LLM summaries (data/summaries → "
             "sandrock_wiki_summary); 'section-reverse-hyde' embeds hypothetical "
-            "questions (data/reverse-hyde → sandrock_wiki_section_reverse_hyde). "
+            "questions (data/reverse-hyde → sandrock_wiki_section_reverse_hyde); "
+            "'section-tagged-reverse-hyde' embeds tagged questions "
+            "(data/tagged-reverse-hyde → sandrock_wiki_section_tagged_reverse_hyde). "
             "Prompted interactively if omitted."
         ),
     )

@@ -52,6 +52,7 @@ VALID_TESTSETS = ("factoid", "conceptual", "messy")
 _COLLECTION_MAP: dict[str, str] = {
     "summary": "sandrock_wiki_summary",
     "section-reverse-hyde": "sandrock_wiki_section_reverse_hyde",
+    "section-tagged-reverse-hyde": "sandrock_wiki_section_tagged_reverse_hyde",
 }
 
 
